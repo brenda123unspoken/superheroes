@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData
-from sqlalchemy.orm import validates
+from sqlalchemy import MetaData, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 
@@ -15,13 +15,14 @@ class Hero(db.Model, SerializerMixin):
     __tablename__ = 'heroes'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    super_name = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    super_name = db.Column(db.String, nullable=False)
 
     # add relationship
-
+    powers = db.relationship("Power", secondary="hero_powers", back_populates="heroes")
+    hero_powers = db.relationship("HeroPower", back_populates="hero")
     # add serialization rules
-
+    serialize_rules = ('-hero_powers',)
     def __repr__(self):
         return f'<Hero {self.id}>'
 
@@ -34,10 +35,19 @@ class Power(db.Model, SerializerMixin):
     description = db.Column(db.String)
 
     # add relationship
+    heroes = relationship("Hero", secondary="hero_powers", back_populates="powers")
+    hero_powers = relationship("HeroPower", back_populates="power")
 
     # add serialization rules
-
+    serialize_rules = ('-hero_powers',)  
     # add validation
+    @validates('description')
+    def validate_description(self, key, value):
+        if not value:
+            raise ValueError("Description must be present")
+        if len(value) < 20:
+            raise ValueError("Description must be at least 20 characters long")
+        return value
 
     def __repr__(self):
         return f'<Power {self.id}>'
@@ -50,10 +60,22 @@ class HeroPower(db.Model, SerializerMixin):
     strength = db.Column(db.String, nullable=False)
 
     # add relationships
+    hero_id = db.Column(db.Integer, ForeignKey('heroes.id', ondelete="CASCADE"))
+    hero = relationship("Hero", back_populates="hero_powers")
+
+    power_id = db.Column(db.Integer, ForeignKey('powers.id', ondelete="CASCADE"))
+    power = relationship("Power", back_populates="hero_powers")
 
     # add serialization rules
-
+    serialize_rules = ('-hero', '-power',) 
     # add validation
+    @validates('strength')
+    def validate_strength(self, key, value):
+        allowed_values = {'Strong', 'Weak', 'Average'}
+        if value not in allowed_values:
+            raise ValueError(f"Strength must be one of {allowed_values}")
+        return value
+
 
     def __repr__(self):
         return f'<HeroPower {self.id}>'
