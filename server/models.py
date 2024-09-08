@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm import relationship, validates 
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 
@@ -57,7 +57,7 @@ class HeroPower(db.Model, SerializerMixin):
     __tablename__ = 'hero_powers'
 
     id = db.Column(db.Integer, primary_key=True)
-    strength = db.Column(db.String, nullable=False)
+    strength = db.Column(db.String(50), nullable=False)
 
     # add relationships
     hero_id = db.Column(db.Integer, ForeignKey('heroes.id', ondelete="CASCADE"))
@@ -79,3 +79,11 @@ class HeroPower(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<HeroPower {self.id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'strength': self.strength,
+            'hero_id': self.hero_id,
+           'power_id': self.power_id
+        }

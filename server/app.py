@@ -20,9 +20,9 @@ app.json.compact = False
 db.init_app(app)
 migrate = Migrate(app, db)
 
-
-
 api = Api(app)
+
+
 
 # Routes
 class Heroes(Resource):
@@ -53,11 +53,12 @@ class PowerDetail(Resource):
         power = Power.query.get(id)
         if power:
             data = request.get_json()
-            if "description" in data and len(data["description"]) >= 20:
-                power.description = data["description"]
+            description = data.get("description")
+            if description and isinstance(description, str) and len(description) >= 20:
+                power.description = description
                 db.session.commit()
                 return power.to_dict(), 200
-            return {"errors": ["Validation error: Description must be at least 20 characters long"]}, 400
+            return {"errors": ["Validation error: Description must be a string of at least 20 characters long"]}, 400
         return {"error": "Power not found"}, 404
 
 class HeroPowerCreate(Resource):
